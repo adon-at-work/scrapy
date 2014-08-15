@@ -82,17 +82,17 @@ class IterErrbackTest(unittest.TestCase):
 
     def test_iter_errback_good(self):
         def itergood():
-            for x in xrange(10):
+            for x in list(range(10)):
                 yield x
 
         errors = []
         out = list(iter_errback(itergood(), errors.append))
-        self.assertEqual(out, range(10))
+        self.assertEqual(out, list(range(10)))
         self.failIf(errors)
 
     def test_iter_errback_bad(self):
         def iterbad():
-            for x in xrange(10):
+            for x in list(range(10)):
                 if x == 5:
                     a = 1/0
                 yield x
