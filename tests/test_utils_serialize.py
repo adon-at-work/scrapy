@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from twisted.internet import defer
 
+from scrapy.utils.python import unicode_to_str
 from scrapy.utils.serialize import ScrapyJSONEncoder
 from scrapy.http import Request, Response
 
@@ -26,19 +27,20 @@ class JsonEncoderTestCase(unittest.TestCase):
 
         for input, output in [('foo', 'foo'), (d, ds), (t, ts), (dt, dts),
                               (dec, decs), (['foo', d], ['foo', ds])]:
-            self.assertEqual(self.encoder.encode(input), json.dumps(output))
+            self.assertEqual(self.encoder.encode(input),
+                             json.dumps(output))
 
     def test_encode_deferred(self):
         self.assertIn('Deferred', self.encoder.encode(defer.Deferred()))
 
     def test_encode_request(self):
-        r = Request("http://www.example.com/lala")
+        r = Request(b"http://www.example.com/lala")
         rs = self.encoder.encode(r)
         self.assertIn(r.method, rs)
-        self.assertIn(r.url, rs)
+        self.assertIn(r.url, unicode_to_str(rs))
 
     def test_encode_response(self):
-        r = Response("http://www.example.com/lala")
+        r = Response(b"http://www.example.com/lala")
         rs = self.encoder.encode(r)
-        self.assertIn(r.url, rs)
+        self.assertIn(r.url, unicode_to_str(rs))
         self.assertIn(str(r.status), rs)
