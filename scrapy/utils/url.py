@@ -81,7 +81,7 @@ def escape_ajax(url):
     Return the crawleable url according to:
     http://code.google.com/web/ajaxcrawling/docs/getting-started.html
 
-    >>> escape_ajax("www.example.com/ajax.html#!key=value")
+    >>> escape_ajax(b"www.example.com/ajax.html#!key=value")
     'www.example.com/ajax.html?_escaped_fragment_=key%3Dvalue'
     >>> escape_ajax("www.example.com/ajax.html?k1=v1&k2=v2#!key=value")
     'www.example.com/ajax.html?k1=v1&k2=v2&_escaped_fragment_=key%3Dvalue'
@@ -99,7 +99,8 @@ def escape_ajax(url):
     >>> escape_ajax("www.example.com/ajax.html")
     'www.example.com/ajax.html'
     """
+    assert isinstance(url, bytes)
     defrag, frag = urldefrag(url)
-    if not frag.startswith('!'):
+    if not frag.startswith(b'!'):
         return url
-    return add_or_replace_parameter(defrag, '_escaped_fragment_', frag[1:])
+    return add_or_replace_parameter(defrag, b'_escaped_fragment_', frag[1:])

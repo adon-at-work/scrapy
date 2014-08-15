@@ -24,6 +24,7 @@ class FormRequest(Request):
         if formdata:
             items = formdata.items() if isinstance(formdata, dict) else formdata
             querystr = _urlencode(items, self.encoding)
+            #print(' '.join((repr(querystr), repr(items), repr(formdata))))
             if self.method == 'POST':
                 self.headers.setdefault('Content-Type', 'application/x-www-form-urlencoded')
                 self._set_body(querystr)
@@ -50,8 +51,8 @@ def _get_form_url(form, url):
 def _urlencode(seq, enc):
     values = [(unicode_to_str(k, enc), unicode_to_str(v, enc))
               for k, vs in seq
-              for v in (vs if hasattr(vs, '__iter__') else [vs])]
-    return urlencode(values, doseq=1)
+              for v in (vs if isinstance(vs, (list, tuple)) else [vs])]
+    return unicode_to_str(urlencode(values, doseq=1))
 
 
 def _get_form(response, formname, formnumber, formxpath):
