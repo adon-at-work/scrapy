@@ -51,7 +51,6 @@ tests/test_spidermiddleware_httperror.py
 tests/test_spidermiddleware_referer.py
 tests/test_spider.py
 tests/test_utils_iterators.py
-tests/test_utils_python.py
 tests/test_utils_reqser.py
 tests/test_utils_request.py
 tests/test_utils_response.py

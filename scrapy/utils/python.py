@@ -29,6 +29,8 @@ def flatten(x):
 
     result = []
     for el in x:
+        if isinstance(el, (six.text_type, bytes)):
+            result.append(el)
         if hasattr(el, "__iter__"):
             result.extend(flatten(el))
         else:
@@ -122,14 +124,16 @@ def memoizemethod_noargs(method):
         return cache[self]
     return new_method
 
-_BINARYCHARS = set(map(chr, range(32))) - set(["\0", "\t", "\n", "\r"])
 
 def isbinarytext(text):
     """Return True if the given text is considered binary, or false
     otherwise, by looking for binary bytes at their chars
     """
-    assert isinstance(text, str), "text must be str, got '%s'" % type(text).__name__
+    assert isinstance(text, bytes), \
+        "text must be bytes, got '{0}'".format(type(text).__name__)
     return any(c in _BINARYCHARS for c in text)
+_BINARYCHARS = set(range(32)) - {0, 9, 10, 13}  # Exclude b'\0\t\n\r'
+_BINARYCHARS |= {chr(x).encode('ascii') for x in _BINARYCHARS}
 
 def get_func_args(func, stripself=False):
     """Return the argument name list of a callable"""
@@ -236,9 +240,9 @@ def stringify_dict(dct_or_tuples, encoding='utf-8', keys_only=True):
     """
     d = {}
     for k, v in six.iteritems(dict(dct_or_tuples)):
-        k = k.encode(encoding) if isinstance(k, unicode) else k
+        k = k.encode(encoding) if isinstance(k, six.text_type) else k
         if not keys_only:
-            v = v.encode(encoding) if isinstance(v, unicode) else v
+            v = v.encode(encoding) if isinstance(v, six.text_type) else v
         d[k] = v
     return d
 

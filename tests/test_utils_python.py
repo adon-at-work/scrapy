@@ -3,19 +3,22 @@ import operator
 import unittest
 from itertools import count
 
+import six
+
 from scrapy.utils.python import str_to_unicode, unicode_to_str, \
     memoizemethod_noargs, isbinarytext, equal_attributes, \
     WeakKeyCache, stringify_dict, get_func_args
 
 __doctests__ = ['scrapy.utils.python']
 
+
 class UtilsPythonTestCase(unittest.TestCase):
     def test_str_to_unicode(self):
         # converting an utf-8 encoded string to unicode
-        self.assertEqual(str_to_unicode('lel\xc3\xb1e'), u'lel\xf1e')
+        self.assertEqual(str_to_unicode(b'lel\xc3\xb1e'), u'lel\xf1e')
 
         # converting a latin-1 encoded string to unicode
-        self.assertEqual(str_to_unicode('lel\xf1e', 'latin-1'), u'lel\xf1e')
+        self.assertEqual(str_to_unicode(b'lel\xf1e', 'latin-1'), u'lel\xf1e')
 
         # converting a unicode to unicode should return the same object
         self.assertEqual(str_to_unicode(u'\xf1e\xf1e\xf1e'), u'\xf1e\xf1e\xf1e')
@@ -24,23 +27,23 @@ class UtilsPythonTestCase(unittest.TestCase):
         self.assertRaises(TypeError, str_to_unicode, 423)
 
         # check errors argument works
-        assert u'\ufffd' in str_to_unicode('a\xedb', 'utf-8', errors='replace')
+        self.assertIn(u'\ufffd', str_to_unicode(b'a\xedb', 'utf-8', errors='replace'))
 
     def test_unicode_to_str(self):
         # converting a unicode object to an utf-8 encoded string
-        self.assertEqual(unicode_to_str(u'\xa3 49'), '\xc2\xa3 49')
+        self.assertEqual(unicode_to_str(u'\xa3 49'), b'\xc2\xa3 49')
 
-        # converting a unicode object to a latin-1 encoded string
-        self.assertEqual(unicode_to_str(u'\xa3 49', 'latin-1'), '\xa3 49')
+        # converting a unicode to a latin-1 encoded string
+        self.assertEqual(unicode_to_str(u'\xa3 49', 'latin-1'), b'\xa3 49')
 
-        # converting a regular string to string should return the same object
-        self.assertEqual(unicode_to_str('lel\xf1e'), 'lel\xf1e')
+        # converting bytes to bytes should return the same object
+        self.assertEqual(unicode_to_str(b'lel\xf1e'), b'lel\xf1e')
 
         # converting a strange object should raise TypeError
         self.assertRaises(TypeError, unicode_to_str, unittest)
 
         # check errors argument works
-        assert '?' in unicode_to_str(u'a\ufffdb', 'latin-1', errors='replace')
+        self.assertIn(b'?', unicode_to_str(u'a\ufffdb', 'latin-1', errors='replace'))
 
     def test_memoizemethod_noargs(self):
         class A(object):
@@ -60,18 +63,17 @@ class UtilsPythonTestCase(unittest.TestCase):
         assert one is not three
 
     def test_isbinarytext(self):
-
         # basic tests
-        assert not isbinarytext("hello")
+        assert not isbinarytext(b"hello")
 
         # utf-16 strings contain null bytes
         assert not isbinarytext(u"hello".encode('utf-16'))
 
         # one with encoding
-        assert not isbinarytext("<div>Price \xa3</div>")
+        assert not isbinarytext(b"<div>Price \xa3</div>")
 
         # finally some real binary bytes
-        assert isbinarytext("\x02\xa3")
+        assert isbinarytext(b"\x02\xa3")
 
     def test_equal_attributes(self):
         class Obj:
@@ -132,28 +134,40 @@ class UtilsPythonTestCase(unittest.TestCase):
         self.assertFalse(len(wk._weakdict))
 
     def test_stringify_dict(self):
-        d = {'a': 123, u'b': 'c', u'd': u'e', object(): u'e'}
+        obj = object()
+        d = {b'a': 123, u'b': b'c', u'd': u'e', obj: u'e'}
         d2 = stringify_dict(d, keys_only=False)
-        self.assertEqual(d, d2)
-        self.failIf(d is d2) # shouldn't modify in place
-        self.failIf(any(isinstance(x, unicode) for x in d2.keys()))
-        self.failIf(any(isinstance(x, unicode) for x in d2.values()))
+        self.assertEqual(len(d), len(d2))
+        self.assertEqual(d2[b'a'], 123)
+        self.assertEqual(d2[b'b'], b'c')
+        self.assertEqual(d2[b'd'], b'e')
+        self.assertEqual(d2[obj], b'e')
+        self.assertFalse(any(isinstance(x, six.text_type) for x in d2))
+        self.assertFalse(any(isinstance(x, six.text_type) for x in d2.values()))
 
     def test_stringify_dict_tuples(self):
-        tuples = [('a', 123), (u'b', 'c'), (u'd', u'e'), (object(), u'e')]
-        d = dict(tuples)
+        obj = object()
+        tuples = [(b'a', 123), (u'b', b'c'), (u'd', u'e'), (obj, u'e')]
         d2 = stringify_dict(tuples, keys_only=False)
-        self.assertEqual(d, d2)
-        self.failIf(d is d2) # shouldn't modify in place
-        self.failIf(any(isinstance(x, unicode) for x in d2.keys()), d2.keys())
-        self.failIf(any(isinstance(x, unicode) for x in d2.values()))
+        self.assertEqual(len(tuples), len(d2))
+        self.assertEqual(d2[b'a'], 123)
+        self.assertEqual(d2[b'b'], b'c')
+        self.assertEqual(d2[b'd'], b'e')
+        self.assertEqual(d2[obj], b'e')
+        self.assertFalse(any(isinstance(x, six.text_type) for x in d2))
+        self.assertFalse(any(isinstance(x, six.text_type) for x in d2.values()))
 
     def test_stringify_dict_keys_only(self):
-        d = {'a': 123, u'b': 'c', u'd': u'e', object(): u'e'}
+        obj = object()
+        d = {b'a': 123, u'b': b'c', u'd': u'e', obj: u'e'}
         d2 = stringify_dict(d)
-        self.assertEqual(d, d2)
-        self.failIf(d is d2) # shouldn't modify in place
-        self.failIf(any(isinstance(x, unicode) for x in d2.keys()))
+        self.assertEqual(len(d), len(d2))
+        self.assertEqual(d2[b'a'], d[b'a'])
+        self.assertEqual(d2[b'b'], d[u'b'])
+        self.assertEqual(d2[b'd'], d[u'd'])
+        self.assertEqual(d2[obj], d[obj])
+        self.assertIsNot(d, d2)  # shouldn't modify in place
+        self.assertFalse(any(isinstance(x, six.text_type) for x in d2))
 
     def test_get_func_args(self):
         def f1(a, b, c):
@@ -191,7 +205,7 @@ class UtilsPythonTestCase(unittest.TestCase):
         self.assertEqual(get_func_args(object), [])
 
         # TODO: how do we fix this to return the actual argument names?
-        self.assertEqual(get_func_args(unicode.split), [])
+        self.assertEqual(get_func_args(six.text_type.split), [])
         self.assertEqual(get_func_args(" ".join), [])
         self.assertEqual(get_func_args(operator.itemgetter(2)), [])
 
