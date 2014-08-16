@@ -4,6 +4,7 @@ from scrapy.http import Request
 from scrapy.spider import Spider
 from scrapy.utils.reqser import request_to_dict, request_from_dict
 
+
 class RequestSerializationTest(unittest.TestCase):
 
     def setUp(self):
@@ -15,15 +16,15 @@ class RequestSerializationTest(unittest.TestCase):
 
     def test_all_attributes(self):
         r = Request("http://www.example.com",
-            callback='parse_item',
-            errback='handle_error',
-            method="POST",
-            body="some body",
-            headers={'content-encoding': 'text/html; charset=latin-1'},
-            cookies={'currency': 'usd'},
-            encoding='latin-1',
-            priority=20,
-            meta={'a': 'b'})
+                    callback='parse_item',
+                    errback='handle_error',
+                    method="POST",
+                    body="some body",
+                    headers={'content-encoding': 'text/html; charset=latin-1'},
+                    cookies={'currency': 'usd'},
+                    encoding='latin-1',
+                    priority=20,
+                    meta={'a': 'b'})
         self._assert_serializes_ok(r)
 
     def test_latin1_body(self):

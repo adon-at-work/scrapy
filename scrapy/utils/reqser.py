@@ -59,10 +59,15 @@ def request_from_dict(d, spider=None):
 
 
 def _find_method(obj, func):
-    if obj and hasattr(func, 'im_self') and func.im_self is obj:
-        return func.im_func.__name__
-    else:
-        raise ValueError("Function %s is not a method of: %s" % (func, obj))
+    if obj is not None:
+        self_ = getattr(func, '__self__', None) \
+            or getattr(func, 'im_self', None)
+        if self_ is obj:
+            func_ = getattr(func, '__func__', None) \
+                or getattr(func, 'im_func', None)
+            return func_.__name__
+    raise ValueError("Function {} is not a method of: {}".format(func, obj))
+
 
 def _get_method(obj, name):
     name = str(name)
